@@ -36,7 +36,7 @@
                 <artifactId>liquibase-maven-plugin</artifactId>
                 <version>3.6.2</version>
                 <configuration>
-                    <propertyFile>${basedir}/src/main/resources/application.properties</propertyFile>
+                    <propertyFile>${basedir}/src/main/resources/liquibase.properties</propertyFile>
                     <changeLogFile>${basedir}/db/master.xml</changeLogFile>
                 </configuration>
                 <executions>
@@ -84,11 +84,11 @@
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-            <version>2.3.1.RELEASE</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-security</artifactId>-->
+<!--            <version>2.3.1.RELEASE</version>-->
+<!--        </dependency>-->
 
         <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
         <dependency>
@@ -104,14 +104,14 @@
         <profile>
             <id>test</id>
             <properties>
-                <profile.propertyFile>${basedir}/src/main/resources/application.properties</profile.propertyFile>
+                <profile.propertyFile>${basedir}/src/main/resources/liquibase.properties</profile.propertyFile>
             </properties>
         </profile>
 
         <profile>
             <id>production</id>
             <properties>
-                <profile.propertyFile>${basedir}/src/main/resources/application.properties</profile.propertyFile>
+                <profile.propertyFile>${basedir}/src/main/resources/liquibase.properties</profile.propertyFile>
             </properties>
         </profile>
 
@@ -121,7 +121,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <profile.propertyFile>${basedir}/src/main/resources/application.properties</profile.propertyFile>
+                <profile.propertyFile>${basedir}/src/main/resources/liquibase.properties</profile.propertyFile>
             </properties>
         </profile>
 

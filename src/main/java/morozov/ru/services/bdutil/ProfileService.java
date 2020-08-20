@@ -1,4 +1,4 @@
-package morozov.ru.services;
+package morozov.ru.services.bdutil;
 
 import morozov.ru.models.Profile;
 
