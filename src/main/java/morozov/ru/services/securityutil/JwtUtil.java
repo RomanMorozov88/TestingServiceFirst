@@ -3,10 +3,10 @@ package morozov.ru.services.securityutil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import morozov.ru.models.Profile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -15,6 +15,7 @@ import java.util.Date;
 
 import static org.springframework.util.StringUtils.hasText;
 
+@Component
 public class JwtUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtUtil.class);
@@ -29,7 +30,7 @@ public class JwtUtil {
     public JwtUtil() {
     }
 
-    public String generateToken(Profile profile) {
+    public String generateToken(String email) {
         Date date = Date
                 .from(
                         LocalDate.now()
@@ -38,7 +39,7 @@ public class JwtUtil {
                                 .toInstant()
                 );
         return Jwts.builder()
-                .setSubject(profile.getEmail())
+                .setSubject(email)
                 .setExpiration(date)
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();

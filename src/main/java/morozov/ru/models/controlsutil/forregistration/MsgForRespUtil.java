@@ -1,10 +1,10 @@
 package morozov.ru.models.controlsutil.forregistration;
 
-public class MsgForRespRegUtil implements MessageUtil<String> {
+public class MsgForRespUtil implements MessageUtil<String> {
 
     private String msg;
 
-    public MsgForRespRegUtil() {
+    public MsgForRespUtil() {
     }
 
     @Override
