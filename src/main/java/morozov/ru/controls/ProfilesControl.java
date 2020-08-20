@@ -18,12 +18,25 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 
+/**
+ * Единый для всех имеющихся тут запросов контроллер:
+ * /error/last
+ * /profiles/last
+ * /profiles/{ID}
+ * /profiles
+ * /profiles/get
+ * /profiles/notfound
+ * /profiles/set
+ */
 @RestController
 public class ProfilesControl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProfilesControl.class);
     private static final String AUTHORIZATION = "Authorization";
     private static final String TOKEN_PREFIX = "Bearer ";
+    private static final String INVALID = "";
+    private static final String ISPRESENT = "";
+    private static final String NOTFOUND = "";
 
     @Autowired
     private ErrorServices errorServices;
@@ -88,10 +101,16 @@ public class ProfilesControl {
     public MessageUtil getNotFound(HttpServletResponse response) {
         response.setStatus(404);
         MessageUtil result = new MsgForRespUtil();
-        String errorMsg = "Not found";
-        result.setData(errorMsg);
-        this.combineError(errorMsg);
+        result.setData(NOTFOUND);
+        this.combineError(NOTFOUND);
         return result;
+    }
+
+    @GetMapping("/exit")
+    public MessageUtil getExit(HttpServletResponse response) {
+        MessageUtil msg = new MsgForRespUtil();
+        msg.setData("App was closed");
+        return msg;
     }
 
     @PostMapping(value = "/profiles/set", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -100,16 +119,14 @@ public class ProfilesControl {
             HttpServletResponse response
     ) {
         MessageUtil result = new MsgForRespUtil();
-        String errorMsg = null;
 
         if (ValidateEmail.checkEmail(inputProfile.getEmail())) {
             Profile buffer = this.constructProfile(inputProfile);
             buffer = this.profileService.saveProfile(buffer);
             if (buffer == null) {
                 response.setStatus(403);
-                errorMsg = "Email already exist";
-                result.setData(errorMsg);
-                this.combineError(errorMsg);
+                result.setData(ISPRESENT);
+                this.combineError(ISPRESENT);
             } else {
                 response.setStatus(200);
                 result = new ProfileForRespRegUtil();
@@ -119,9 +136,8 @@ public class ProfilesControl {
             }
         } else {
             response.setStatus(400);
-            errorMsg = "Wrong email";
-            result.setData(errorMsg);
-            this.combineError(errorMsg);
+            result.setData(INVALID);
+            this.combineError(INVALID);
         }
         return result;
     }

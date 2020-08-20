@@ -40,7 +40,7 @@ public class HibernateProfileService implements ProfileService {
     @Override
     public Profile getByEmail(String email) {
         TypedQuery<Profile> query = this.entityManager
-                .createQuery("select p from Profile p where p.email = :param", Profile.class);
+                .createQuery("select p from Profile p where upper(p.email) = upper(:param)", Profile.class);
         query.setParameter("param", email);
         return query
                 .getResultList()
