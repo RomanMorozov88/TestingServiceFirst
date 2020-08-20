@@ -1,5 +1,7 @@
 package morozov.ru.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -10,6 +12,7 @@ public class TestingServiceError {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonIgnore
     private int id;
     private String msg;
     private Timestamp created;

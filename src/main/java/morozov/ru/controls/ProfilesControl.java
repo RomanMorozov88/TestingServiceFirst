@@ -1,10 +1,9 @@
 package morozov.ru.controls;
 
 import morozov.ru.models.Profile;
-import morozov.ru.models.controlsutil.forregistration.MessageUtil;
-import morozov.ru.models.controlsutil.forregistration.MsgForRespUtil;
-import morozov.ru.models.controlsutil.forregistration.ProfileForReqRegUtil;
-import morozov.ru.models.controlsutil.forregistration.ProfileForRespRegUtil;
+import morozov.ru.models.TestingServiceError;
+import morozov.ru.models.controlsutil.forregistration.*;
+import morozov.ru.services.bdutil.ErrorServices;
 import morozov.ru.services.bdutil.ProfileService;
 import morozov.ru.services.securityutil.JwtUtil;
 import morozov.ru.services.validateemailutil.ValidateEmail;
@@ -27,9 +26,18 @@ public class ProfilesControl {
     private static final String TOKEN_PREFIX = "Bearer ";
 
     @Autowired
+    private ErrorServices errorServices;
+    @Autowired
     private ProfileService profileService;
     @Autowired
     private JwtUtil jwtUtil;
+
+    @GetMapping("/error/last")
+    public TestingServiceError getLastError(HttpServletResponse response) {
+        response.setStatus(200);
+        TestingServiceError result = this.errorServices.getLast();
+        return result;
+    }
 
     @GetMapping("/profiles/last")
     public Profile getLastProfile(HttpServletResponse response) {
@@ -46,6 +54,7 @@ public class ProfilesControl {
                 response.sendRedirect("/profiles/notfound");
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
+                this.combineError(e.getMessage());
             }
         }
         response.setStatus(200);
@@ -59,11 +68,29 @@ public class ProfilesControl {
         return result;
     }
 
+    @PostMapping(value = "/profiles/get", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Profile getEmailProfile(@RequestBody MsgForProfilesGet msg,
+                                   HttpServletResponse response) {
+        Profile result = this.profileService.getByEmail(msg.getEmail());
+        if (result == null) {
+            try {
+                response.sendRedirect("/profiles/notfound");
+            } catch (IOException e) {
+                LOGGER.error(e.getMessage());
+                this.combineError(e.getMessage());
+            }
+        }
+        response.setStatus(200);
+        return result;
+    }
+
     @GetMapping("/profiles/notfound")
     public MessageUtil getNotFound(HttpServletResponse response) {
         response.setStatus(404);
         MessageUtil result = new MsgForRespUtil();
-        result.setData("Not found");
+        String errorMsg = "Not found";
+        result.setData(errorMsg);
+        this.combineError(errorMsg);
         return result;
     }
 
@@ -73,13 +100,16 @@ public class ProfilesControl {
             HttpServletResponse response
     ) {
         MessageUtil result = new MsgForRespUtil();
+        String errorMsg = null;
 
         if (ValidateEmail.checkEmail(inputProfile.getEmail())) {
             Profile buffer = this.constructProfile(inputProfile);
             buffer = this.profileService.saveProfile(buffer);
             if (buffer == null) {
                 response.setStatus(403);
-                result.setData("Email already exist");
+                errorMsg = "Email already exist";
+                result.setData(errorMsg);
+                this.combineError(errorMsg);
             } else {
                 response.setStatus(200);
                 result = new ProfileForRespRegUtil();
@@ -89,7 +119,9 @@ public class ProfilesControl {
             }
         } else {
             response.setStatus(400);
-            result.setData("Wrong email");
+            errorMsg = "Wrong email";
+            result.setData(errorMsg);
+            this.combineError(errorMsg);
         }
         return result;
     }
@@ -109,6 +141,13 @@ public class ProfilesControl {
             result = TOKEN_PREFIX + jwtUtil.generateToken(email);
         }
         return result;
+    }
+
+    private void combineError(String e) {
+        TestingServiceError error = new TestingServiceError();
+        error.setMsg(e);
+        error.setCreated(new Timestamp(System.currentTimeMillis()));
+        this.errorServices.saveError(error);
     }
 
 }

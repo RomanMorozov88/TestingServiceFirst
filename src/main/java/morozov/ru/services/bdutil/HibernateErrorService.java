@@ -26,7 +26,7 @@ public class HibernateErrorService implements ErrorServices {
 
     @Override
     @Transactional(readOnly = true)
-    public TestingServiceError getLastError() {
+    public TestingServiceError getLast() {
         Query query = entityManager
                 .createQuery("select t from TestingServiceError t order by t.created desc");
         return (TestingServiceError) query
