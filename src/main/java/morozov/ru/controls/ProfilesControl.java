@@ -1,12 +1,11 @@
 package morozov.ru.controls;
 
 import morozov.ru.models.Profile;
-import morozov.ru.models.TestingServiceError;
-import morozov.ru.models.controlsutil.forregistration.*;
-import morozov.ru.services.bdutil.ErrorServices;
+import morozov.ru.models.modelsutil.*;
 import morozov.ru.services.bdutil.ProfileService;
 import morozov.ru.services.securityutil.JwtUtil;
-import morozov.ru.services.validateemailutil.ValidateEmail;
+import morozov.ru.services.staticsutil.ErrorUtil;
+import morozov.ru.services.staticsutil.ValidateEmail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,8 @@ import java.sql.Timestamp;
 import java.util.List;
 
 /**
- * Единый для всех имеющихся тут запросов контроллер:
- * /error/last
+ * Единый для всех /profile/* запросов контроллер:
+ * <p>
  * /profiles/last
  * /profiles/{ID}
  * /profiles
@@ -34,21 +33,21 @@ public class ProfilesControl {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProfilesControl.class);
     private static final String AUTHORIZATION = "Authorization";
     private static final String TOKEN_PREFIX = "Bearer ";
-    private static final String INVALID = "";
-    private static final String ISPRESENT = "";
-    private static final String NOTFOUND = "";
+    private static final String INVALID = "Wrong email";
+    private static final String ISPRESENT = "Email already exist";
+    private static final String NOTFOUND = "Not found";
 
-    @Autowired
-    private ErrorServices errorServices;
     @Autowired
     private ProfileService profileService;
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private ErrorUtil errorUtil;
 
-    @GetMapping("/error/last")
-    public TestingServiceError getLastError(HttpServletResponse response) {
+    @GetMapping("/profiles")
+    public List<Profile> getAllProfiles(HttpServletResponse response) {
+        List<Profile> result = this.profileService.getAll();
         response.setStatus(200);
-        TestingServiceError result = this.errorServices.getLast();
         return result;
     }
 
@@ -67,16 +66,9 @@ public class ProfilesControl {
                 response.sendRedirect("/profiles/notfound");
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
-                this.combineError(e.getMessage());
+                errorUtil.saveErrorMsg(e.getMessage());
             }
         }
-        response.setStatus(200);
-        return result;
-    }
-
-    @GetMapping("/profiles")
-    public List<Profile> getAllProfiles(HttpServletResponse response) {
-        List<Profile> result = this.profileService.getAll();
         response.setStatus(200);
         return result;
     }
@@ -90,7 +82,7 @@ public class ProfilesControl {
                 response.sendRedirect("/profiles/notfound");
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
-                this.combineError(e.getMessage());
+                errorUtil.saveErrorMsg(e.getMessage());
             }
         }
         response.setStatus(200);
@@ -102,15 +94,8 @@ public class ProfilesControl {
         response.setStatus(404);
         MessageUtil result = new MsgForRespUtil();
         result.setData(NOTFOUND);
-        this.combineError(NOTFOUND);
+        errorUtil.saveErrorMsg(NOTFOUND);
         return result;
-    }
-
-    @GetMapping("/exit")
-    public MessageUtil getExit(HttpServletResponse response) {
-        MessageUtil msg = new MsgForRespUtil();
-        msg.setData("App was closed");
-        return msg;
     }
 
     @PostMapping(value = "/profiles/set", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -126,22 +111,28 @@ public class ProfilesControl {
             if (buffer == null) {
                 response.setStatus(403);
                 result.setData(ISPRESENT);
-                this.combineError(ISPRESENT);
+                errorUtil.saveErrorMsg(ISPRESENT);
             } else {
                 response.setStatus(200);
                 result = new ProfileForRespRegUtil();
                 result.setData(buffer.getId());
-                String token = this.combineToken(buffer.getEmail());
+                String token = this.constructToken(buffer.getEmail());
                 response.setHeader(AUTHORIZATION, token);
             }
         } else {
             response.setStatus(400);
             result.setData(INVALID);
-            this.combineError(INVALID);
+            errorUtil.saveErrorMsg(INVALID);
         }
         return result;
     }
 
+    /**
+     * Собирает объект Profile
+     *
+     * @param inputProfile
+     * @return
+     */
     private Profile constructProfile(ProfileForReqRegUtil inputProfile) {
         Profile result = new Profile();
         result.setName(inputProfile.getName());
@@ -151,19 +142,18 @@ public class ProfilesControl {
         return result;
     }
 
-    private String combineToken(String email) {
+    /**
+     * Собирает токен
+     *
+     * @param email
+     * @return
+     */
+    private String constructToken(String email) {
         String result = null;
         if (email != null) {
             result = TOKEN_PREFIX + jwtUtil.generateToken(email);
         }
         return result;
-    }
-
-    private void combineError(String e) {
-        TestingServiceError error = new TestingServiceError();
-        error.setMsg(e);
-        error.setCreated(new Timestamp(System.currentTimeMillis()));
-        this.errorServices.saveError(error);
     }
 
 }

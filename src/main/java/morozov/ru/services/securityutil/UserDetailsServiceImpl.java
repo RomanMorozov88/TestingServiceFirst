@@ -2,6 +2,7 @@ package morozov.ru.services.securityutil;
 
 import morozov.ru.models.Profile;
 import morozov.ru.services.bdutil.ProfileService;
+import morozov.ru.services.staticsutil.ErrorUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +18,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     private ProfileService profileService;
+    @Autowired
+    private ErrorUtil errorUtil;
+    private static final String PROFILENOTFOUND = "Profile not found";
 
     public UserDetailsServiceImpl() {
     }
@@ -25,7 +29,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
         Profile profile = this.profileService.getByEmail(s);
         if (profile == null) {
-            throw new UsernameNotFoundException("Profile not found");
+            errorUtil.saveErrorMsg(PROFILENOTFOUND);
+            throw new UsernameNotFoundException(PROFILENOTFOUND);
         }
         return new User(
                 profile.getEmail(),
